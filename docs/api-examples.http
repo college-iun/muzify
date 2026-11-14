@@ -1,0 +1,64 @@
+### Регистрация (USER или ARTIST)
+POST http://localhost:8080/api/auth/register
+Content-Type: application/json
+
+{ "username": "ivan", "email": "ivan@mail.com", "password": "secret123", "role": "USER" }
+
+### Вход -> получить token
+POST http://localhost:8080/api/auth/login
+Content-Type: application/json
+
+{ "username": "user", "password": "user123" }
+
+### Список треков (подставьте токен)
+GET http://localhost:8080/api/tracks?q=night
+Authorization: Bearer <TOKEN>
+
+### Добавить в избранное
+POST http://localhost:8080/api/favorites/1
+Authorization: Bearer <TOKEN>
+
+### Избранное
+GET http://localhost:8080/api/favorites
+Authorization: Bearer <TOKEN>
+
+### Удалить из избранного
+DELETE http://localhost:8080/api/favorites/1
+Authorization: Bearer <TOKEN>
+
+### Начать прослушивание
+POST http://localhost:8080/api/listening
+Authorization: Bearer <TOKEN>
+Content-Type: application/json
+
+{ "trackId": 1 }
+
+### История прослушиваний
+GET http://localhost:8080/api/listening/history
+Authorization: Bearer <TOKEN>
+
+### Исполнитель: добавить трек (artist / artist123)
+POST http://localhost:8080/api/tracks
+Authorization: Bearer <ARTIST_TOKEN>
+Content-Type: application/json
+
+{ "title": "New Song", "artist": "The Neon Waves", "genre": "Pop", "durationSeconds": 190 }
+
+### Исполнитель: статистика
+GET http://localhost:8080/api/artist/stats
+Authorization: Bearer <ARTIST_TOKEN>
+
+### Администратор: пользователи / смена роли / статистика
+GET http://localhost:8080/api/admin/users
+Authorization: Bearer <ADMIN_TOKEN>
+
+###
+PATCH http://localhost:8080/api/admin/users/3/role
+Authorization: Bearer <ADMIN_TOKEN>
+Content-Type: application/json
+
+{ "role": "ARTIST" }
+
+###
+GET http://localhost:8080/api/admin/stats
+Authorization: Bearer <ADMIN_TOKEN>
