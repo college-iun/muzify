@@ -75,4 +75,17 @@ class ApiFlowTest {
         mvc.perform(get("/api/admin/users").header("Authorization", admin))
                 .andExpect(status().isOk());
     }
+
+    @Test
+    void audioIsStreamable() throws Exception {
+        String t = token("user", "user123");
+        mvc.perform(get("/api/tracks/1/stream").header("Authorization", t))
+                .andExpect(status().isOk());
+        mvc.perform(get("/api/tracks/1/stream")).andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void playerPageIsPublic() throws Exception {
+        mvc.perform(get("/index.html")).andExpect(status().isOk());
+    }
 }

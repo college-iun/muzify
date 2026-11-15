@@ -35,10 +35,10 @@ public class SecurityConfig {
             .headers(h -> h.frameOptions(f -> f.disable())) // для H2-консоли
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/**", "/h2-console/**").permitAll()
+                .requestMatchers("/", "/index.html", "/favicon.ico", "/api/auth/**", "/h2-console/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/artist/**").hasAnyRole("ARTIST", "ADMIN")
-                .requestMatchers(HttpMethod.POST, "/api/tracks").hasAnyRole("ARTIST", "ADMIN")
+                .requestMatchers(HttpMethod.POST, "/api/tracks", "/api/tracks/*/audio").hasAnyRole("ARTIST", "ADMIN")
                 .anyRequest().authenticated())
             .exceptionHandling(e -> e
                 .authenticationEntryPoint((req, res, ex) ->

@@ -20,6 +20,9 @@ public class Track {
 
     private Integer durationSeconds;
 
+    /** Имя аудиофайла в хранилище (null - у трека пока нет аудио). */
+    private String audioFile;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "created_by")
     private User createdBy;
@@ -37,6 +40,8 @@ public class Track {
     public void setGenre(String genre) { this.genre = genre; }
     public Integer getDurationSeconds() { return durationSeconds; }
     public void setDurationSeconds(Integer durationSeconds) { this.durationSeconds = durationSeconds; }
+    public String getAudioFile() { return audioFile; }
+    public void setAudioFile(String audioFile) { this.audioFile = audioFile; }
     public User getCreatedBy() { return createdBy; }
     public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
     public LocalDateTime getCreatedAt() { return createdAt; }

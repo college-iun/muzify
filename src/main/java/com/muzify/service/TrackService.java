@@ -9,8 +9,10 @@ import com.muzify.exception.ApiException;
 import com.muzify.repository.FavoriteRepository;
 import com.muzify.repository.ListeningHistoryRepository;
 import com.muzify.repository.TrackRepository;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -20,9 +22,11 @@ public class TrackService {
     private final TrackRepository tracks;
     private final FavoriteRepository favorites;
     private final ListeningHistoryRepository history;
+    private final StorageService storage;
 
     public TrackService(TrackRepository tracks, FavoriteRepository favorites,
-                        ListeningHistoryRepository history) {
+                        ListeningHistoryRepository history, StorageService storage) {
+        this.storage = storage;
         this.tracks = tracks;
         this.favorites = favorites;
         this.history = history;
@@ -63,7 +67,29 @@ public class TrackService {
         checkOwner(t, current);
         favorites.deleteByTrackId(id);
         history.deleteByTrackId(id);
+        storage.delete(t.getAudioFile());
         tracks.delete(t);
+    }
+
+    /** Загрузка (или замена) аудиофайла трека автором или администратором. */
+    @Transactional
+    public TrackResponse uploadAudio(Long id, MultipartFile file, User current) {
+        Track t = find(id);
+        checkOwner(t, current);
+        String name = storage.save(file);
+        storage.delete(t.getAudioFile());
+        t.setAudioFile(name);
+        return TrackResponse.from(tracks.save(t));
+    }
+
+    /** Аудиофайл трека для воспроизведения. */
+    @Transactional(readOnly = true)
+    public Resource audio(Long id) {
+        Track t = find(id);
+        if (t.getAudioFile() == null) {
+            throw ApiException.notFound("Для этого трека аудио не загружено");
+        }
+        return storage.load(t.getAudioFile());
     }
 
     private Track find(Long id) {

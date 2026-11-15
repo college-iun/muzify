@@ -5,10 +5,15 @@ import com.muzify.dto.TrackResponse;
 import com.muzify.entity.User;
 import com.muzify.service.TrackService;
 import jakarta.validation.Valid;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.MediaTypeFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -35,6 +40,23 @@ public class TrackController {
     public ResponseEntity<TrackResponse> create(@Valid @RequestBody TrackRequest req,
                                                 @AuthenticationPrincipal User user) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(req, user));
+    }
+
+    @PostMapping(value = "/{id}/audio", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
+    public TrackResponse uploadAudio(@PathVariable Long id, @RequestParam("file") MultipartFile file,
+                                     @AuthenticationPrincipal User user) {
+        return service.uploadAudio(id, file, user);
+    }
+
+    /** Потоковая отдача аудио (поддерживает Range - перемотку). */
+    @GetMapping("/{id}/stream")
+    public ResponseEntity<Resource> stream(@PathVariable Long id) {
+        Resource audio = service.audio(id);
+        MediaType type = MediaTypeFactory.getMediaType(audio).orElse(MediaType.APPLICATION_OCTET_STREAM);
+        return ResponseEntity.ok()
+                .contentType(type)
+                .header(HttpHeaders.ACCEPT_RANGES, "bytes")
+                .body(audio);
     }
 
     @PutMapping("/{id}")

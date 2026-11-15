@@ -37,6 +37,22 @@ Content-Type: application/json
 GET http://localhost:8080/api/listening/history
 Authorization: Bearer <TOKEN>
 
+### Скачать/проиграть аудио трека
+GET http://localhost:8080/api/tracks/1/stream
+Authorization: Bearer <TOKEN>
+
+### Исполнитель: загрузить аудио к треку (multipart, поле file)
+POST http://localhost:8080/api/tracks/6/audio
+Authorization: Bearer <ARTIST_TOKEN>
+Content-Type: multipart/form-data; boundary=B
+
+--B
+Content-Disposition: form-data; name="file"; filename="song.mp3"
+Content-Type: audio/mpeg
+
+< ./song.mp3
+--B--
+
 ### Исполнитель: добавить трек (artist / artist123)
 POST http://localhost:8080/api/tracks
 Authorization: Bearer <ARTIST_TOKEN>

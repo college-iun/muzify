@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Muzify — слушать музыку</title>
+<style>
+  :root{--bg:#12101f;--card:#1e1b33;--card2:#272344;--acc:#8b5cf6;--acc2:#22d3ee;--txt:#e8e6f5;--mute:#9a96b8;--red:#f87171;--green:#34d399}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding-bottom:110px}
+  button,input,select{font:inherit}
+  .hidden{display:none!important}
+  header{display:flex;align-items:center;gap:16px;padding:14px 24px;background:var(--card);border-bottom:3px solid var(--acc);position:sticky;top:0;z-index:5}
+  .logo{font-size:22px;font-weight:800;letter-spacing:.5px}
+  .logo span{color:var(--acc2)}
+  .spacer{flex:1}
+  .badge{padding:3px 10px;border-radius:999px;background:var(--acc);color:#fff;font-size:12px;font-weight:700}
+  .btn{background:var(--acc);color:#fff;border:0;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+  .btn:hover{filter:brightness(1.12)}
+  .btn.ghost{background:var(--card2);color:var(--txt)}
+  .btn.small{padding:5px 10px;font-size:13px}
+  main{max-width:900px;margin:0 auto;padding:20px}
+  nav{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+  nav button{background:var(--card);color:var(--mute);border:1px solid transparent;padding:9px 16px;border-radius:8px;cursor:pointer;font-weight:600}
+  nav button.active{color:#fff;border-color:var(--acc);background:var(--card2)}
+  .card{background:var(--card);border-radius:12px;padding:20px;margin-bottom:16px}
+  h2{margin:0 0 14px;font-size:20px}
+  input,select{width:100%;padding:10px 12px;margin-bottom:10px;border-radius:8px;border:1px solid #3a3560;background:#12101f;color:var(--txt)}
+  input[type=file]{padding:8px}
+  .auth{max-width:420px;margin:60px auto}
+  .tabs{display:flex;gap:8px;margin-bottom:14px}
+  .tabs button{flex:1}
+  .demo{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center;color:var(--mute);font-size:13px}
+  .track{display:flex;align-items:center;gap:14px;padding:12px;border-radius:10px;background:var(--card);margin-bottom:8px}
+  .track.playing{background:var(--card2);outline:1px solid var(--acc)}
+  .play{width:42px;height:42px;border-radius:50%;border:0;background:var(--acc);color:#fff;font-size:16px;cursor:pointer;flex:none}
+  .play:disabled{background:#3a3560;cursor:not-allowed}
+  .info{flex:1;min-width:0}
+  .title{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .meta{color:var(--mute);font-size:13px}
+  .heart{background:none;border:0;font-size:22px;cursor:pointer;color:var(--mute)}
+  .heart.on{color:var(--red)}
+  .dur{color:var(--mute);font-size:13px;width:44px;text-align:right}
+  .player{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:3px solid var(--acc);padding:12px 24px;display:flex;align-items:center;gap:18px;z-index:6}
+  .player audio{flex:1;min-width:0;height:40px}
+  .now{width:240px;min-width:0}
+  table{width:100%;border-collapse:collapse}
+  th,td{text-align:left;padding:8px;border-bottom:1px solid #2f2a52;font-size:14px}
+  th{color:var(--mute);font-weight:600}
+  td select{margin:0;padding:6px}
+  #toast{position:fixed;top:76px;right:20px;background:var(--card2);border-left:4px solid var(--acc2);padding:12px 18px;border-radius:8px;z-index:20;max-width:340px}
+  #toast.err{border-color:var(--red)}
+  .empty{color:var(--mute);text-align:center;padding:30px}
+  .stat{display:inline-block;background:var(--card2);border-radius:10px;padding:12px 18px;margin:0 10px 10px 0}
+  .stat b{display:block;font-size:22px;color:var(--acc2)}
+  @media(max-width:640px){.now{display:none}.player{padding:10px 12px}header{padding:12px}}
+</style>
+</head>
+<body>
+
+<div id="toast" class="hidden"></div>
+
+<!-- ===== Вход / регистрация ===== -->
+<section id="authView" class="auth card">
+  <div class="logo" style="text-align:center;margin-bottom:14px">🎵 Muz<span>ify</span></div>
+  <div class="tabs">
+    <button id="tabLogin" class="btn" type="button">Вход</button>
+    <button id="tabReg" class="btn ghost" type="button">Регистрация</button>
+  </div>
+  <input id="aUser" placeholder="Имя пользователя" autocomplete="username">
+  <input id="aEmail" class="hidden" placeholder="Email" type="email">
+  <input id="aPass" placeholder="Пароль" type="password" autocomplete="current-password">
+  <select id="aRole" class="hidden">
+    <option value="USER">Я слушатель</option>
+    <option value="ARTIST">Я исполнитель</option>
+  </select>
+  <button id="aSubmit" class="btn" style="width:100%" type="button">Войти</button>
+  <div class="demo">
+    Демо-вход:
+    <button class="btn ghost small" data-demo="user:user123" type="button">user</button>
+    <button class="btn ghost small" data-demo="artist:artist123" type="button">artist</button>
+    <button class="btn ghost small" data-demo="admin:admin123" type="button">admin</button>
+  </div>
+</section>
+
+<!-- ===== Приложение ===== -->
+<div id="appView" class="hidden">
+  <header>
+    <div class="logo">🎵 Muz<span>ify</span></div>
+    <div class="spacer"></div>
+    <span id="meName"></span>
+    <span id="meRole" class="badge"></span>
+    <button id="logoutBtn" class="btn ghost small" type="button">Выйти</button>
+  </header>
+  <main>
+    <nav id="nav"></nav>
+    <div id="content"></div>
+  </main>
+  <div class="player">
+    <div class="now">
+      <div id="nowTitle" class="title">Выберите трек</div>
+      <div id="nowArtist" class="meta">—</div>
+    </div>
+    <audio id="audio" controls></audio>
+  </div>
+</div>
+
+<script>
+'use strict';
+let token = null, me = null;
+let tracks = [], tracksById = {}, favIds = new Set();
+let currentTrackId = null, currentUrl = null, view = 'catalog', searchQ = '';
+const $ = id => document.getElementById(id);
+const audio = $('audio');
+
+/* ---------- утилиты ---------- */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmt(sec){ if(!sec) return ''; const m=Math.floor(sec/60), s=sec%60; return m+':'+String(s).padStart(2,'0'); }
+function toast(msg, isErr){
+  const t=$('toast'); t.textContent=msg; t.className=isErr?'err':''; 
+  clearTimeout(toast.h); toast.h=setTimeout(()=>t.className='hidden',3000);
+}
+async function api(path, opts){
+  opts = opts || {};
+  const headers = opts.headers || {};
+  if(token) headers['Authorization'] = 'Bearer ' + token;
+  let body = opts.body;
+  if(opts.json !== undefined){ headers['Content-Type']='application/json'; body = JSON.stringify(opts.json); }
+  const r = await fetch(path, {method: opts.method || 'GET', headers, body});
+  if(r.status === 204) return null;
+  let data = null; try{ data = await r.json(); }catch(e){}
+  if(!r.ok){
+    if(r.status === 401 && token){ logout(); }
+    throw new Error((data && data.message) || ('Ошибка ' + r.status));
+  }
+  return data;
+}
+
+/* ---------- авторизация ---------- */
+let regMode = false;
+function setMode(reg){
+  regMode = reg;
+  $('tabLogin').className = 'btn' + (reg ? ' ghost' : '');
+  $('tabReg').className = 'btn' + (reg ? '' : ' ghost');
+  $('aEmail').classList.toggle('hidden', !reg);
+  $('aRole').classList.toggle('hidden', !reg);
+  $('aSubmit').textContent = reg ? 'Зарегистрироваться' : 'Войти';
+}
+$('tabLogin').onclick = () => setMode(false);
+$('tabReg').onclick = () => setMode(true);
+document.querySelectorAll('[data-demo]').forEach(b => b.onclick = () => {
+  const [u,p] = b.dataset.demo.split(':'); setMode(false);
+  $('aUser').value = u; $('aPass').value = p; doAuth();
+});
+$('aSubmit').onclick = doAuth;
+$('aPass').addEventListener('keydown', e => { if(e.key === 'Enter') doAuth(); });
+
+async function doAuth(){
+  const username = $('aUser').value.trim(), password = $('aPass').value;
+  try{
+    if(regMode){
+      await api('/api/auth/register', {method:'POST', json:{username, email:$('aEmail').value.trim(), password, role:$('aRole').value}});
+      toast('Аккаунт создан, входим…');
+    }
+    const res = await api('/api/auth/login', {method:'POST', json:{username, password}});
+    token = res.token;
+    sessionStorage.setItem('muzify_token', token);
+    await startApp();
+  }catch(e){ toast(e.message, true); }
+}
+function logout(){
+  token = null; me = null; sessionStorage.removeItem('muzify_token');
+  audio.pause(); audio.removeAttribute('src'); currentTrackId = null;
+  $('appView').classList.add('hidden'); $('authView').classList.remove('hidden');
+}
+$('logoutBtn').onclick = logout;
+
+async function startApp(){
+  me = await api('/api/users/me');
+  $('authView').classList.add('hidden'); $('appView').classList.remove('hidden');
+  $('meName').textContent = me.username; $('meRole').textContent = me.role;
+  buildNav(); await loadCatalog(); show('catalog');
+}
+
+/* ---------- навигация ---------- */
+function buildNav(){
+  const items = [['catalog','Каталог'],['favorites','Избранное'],['history','История']];
+  if(me.role === 'ARTIST' || me.role === 'ADMIN') items.push(['upload','Загрузить трек'],['stats','Моя статистика']);
+  if(me.role === 'ADMIN') items.push(['admin','Администрирование']);
+  const nav = $('nav'); nav.innerHTML = '';
+  items.forEach(([id,label]) => {
+    const b = document.createElement('button'); b.textContent = label; b.dataset.view = id;
+    b.onclick = () => show(id); nav.appendChild(b);
+  });
+}
+async function show(v){
+  view = v;
+  document.querySelectorAll('#nav button').forEach(b => b.classList.toggle('active', b.dataset.view === v));
+  try{
+    if(v==='catalog') renderCatalog();
+    else if(v==='favorites') await renderFavorites();
+    else if(v==='history') await renderHistory();
+    else if(v==='upload') renderUpload();
+    else if(v==='stats') await renderStats();
+    else if(v==='admin') await renderAdmin();
+  }catch(e){ toast(e.message, true); }
+}
+
+/* ---------- данные ---------- */
+async function loadCatalog(){
+  const [t, f] = await Promise.all([
+    api('/api/tracks' + (searchQ ? '?q=' + encodeURIComponent(searchQ) : '')),
+    api('/api/favorites')
+  ]);
+  tracks = t.tracks;
+  tracks.forEach(x => tracksById[x.id] = x);
+  favIds = new Set(f.favorites.map(x => x.id));
+}
+
+/* ---------- список треков ---------- */
+function trackRow(t){
+  const row = document.createElement('div');
+  row.className = 'track' + (t.id === currentTrackId ? ' playing' : '');
+  row.dataset.id = t.id;
+  const fav = favIds.has(t.id);
+  row.innerHTML =
+    '<button class="play" ' + (t.hasAudio ? '' : 'disabled title="Нет аудио"') + '>▶</button>' +
+    '<div class="info"><div class="title">' + esc(t.title) + '</div>' +
+    '<div class="meta">' + esc(t.artist) + (t.genre ? ' · ' + esc(t.genre) : '') + '</div></div>' +
+    '<div class="dur">' + fmt(t.durationSeconds) + '</div>' +
+    '<button class="heart' + (fav ? ' on' : '') + '" title="В избранное">' + (fav ? '♥' : '♡') + '</button>';
+  row.querySelector('.play').onclick = () => play(t.id);
+  row.querySelector('.heart').onclick = () => toggleFav(t.id);
+  return row;
+}
+function listInto(el, arr, emptyText){
+  if(!arr.length){ el.innerHTML = '<div class="empty">' + emptyText + '</div>'; return; }
+  el.innerHTML = ''; arr.forEach(t => el.appendChild(trackRow(t)));
+}
+
+function renderCatalog(){
+  $('content').innerHTML =
+    '<input id="q" placeholder="Поиск по названию или исполнителю…" value="' + esc(searchQ) + '">' +
+    '<div id="list"></div>';
+  listInto($('list'), tracks, 'Треков пока нет');
+  $('q').oninput = debounce(async () => { searchQ = $('q').value.trim(); await loadCatalog(); listInto($('list'), tracks, 'Ничего не найдено'); }, 300);
+}
+function debounce(fn, ms){ let h; return (...a) => { clearTimeout(h); h = setTimeout(() => fn(...a), ms); }; }
+
+async function renderFavorites(){
+  await loadCatalog();
+  $('content').innerHTML = '<h2>Избранное</h2><div id="list"></div>';
+  listInto($('list'), tracks.filter(t => favIds.has(t.id)), 'В избранном пока пусто. Нажмите ♡ у трека в каталоге.');
+}
+
+async function renderHistory(){
+  const h = await api('/api/listening/history');
+  $('content').innerHTML = '<h2>История прослушиваний</h2><div id="list"></div>';
+  const el = $('list');
+  if(!h.history.length){ el.innerHTML = '<div class="empty">Вы ещё ничего не слушали</div>'; return; }
+  el.innerHTML = '';
+  h.history.forEach(item => {
+    const t = tracksById[item.trackId];
+    const row = document.createElement('div'); row.className = 'track';
+    row.innerHTML = '<button class="play"' + (t && t.hasAudio ? '' : ' disabled') + '>▶</button>' +
+      '<div class="info"><div class="title">' + esc(item.title) + '</div><div class="meta">' + esc(item.artist) + '</div></div>' +
+      '<div class="meta">' + esc(item.listenedAt.replace('T',' ')) + '</div>';
+    row.querySelector('.play').onclick = () => play(item.trackId);
+    el.appendChild(row);
+  });
+}
+
+/* ---------- воспроизведение ---------- */
+async function play(id){
+  const t = tracksById[id];
+  if(!t || !t.hasAudio){ toast('У этого трека нет аудио', true); return; }
+  try{
+    const r = await fetch('/api/tracks/' + id + '/stream', {headers:{'Authorization':'Bearer ' + token}});
+    if(!r.ok) throw new Error('Не удалось загрузить аудио (' + r.status + ')');
+    const blob = await r.blob();
+    if(currentUrl) URL.revokeObjectURL(currentUrl);
+    currentUrl = URL.createObjectURL(blob);
+    audio.src = currentUrl;
+    currentTrackId = id;
+    $('nowTitle').textContent = t.title; $('nowArtist').textContent = t.artist;
+    await audio.play();
+    document.querySelectorAll('.track').forEach(r => r.classList.toggle('playing', Number(r.dataset.id) === id));
+    api('/api/listening', {method:'POST', json:{trackId:id}}).catch(()=>{});
+  }catch(e){ toast(e.message, true); }
+}
+
+async function toggleFav(id){
+  try{
+    if(favIds.has(id)){ await api('/api/favorites/' + id, {method:'DELETE'}); favIds.delete(id); toast('Удалено из избранного'); }
+    else { await api('/api/favorites/' + id, {method:'POST'}); favIds.add(id); toast('Добавлено в избранное'); }
+    if(view === 'favorites') await renderFavorites(); else if(view === 'catalog') listInto($('list'), tracks, 'Треков пока нет');
+  }catch(e){ toast(e.message, true); }
+}
+
+/* ---------- загрузка трека (ARTIST / ADMIN) ---------- */
+function renderUpload(){
+  $('content').innerHTML =
+    '<div class="card"><h2>Загрузить трек</h2>' +
+    '<input id="uTitle" placeholder="Название трека">' +
+    '<input id="uArtist" placeholder="Исполнитель" value="' + esc(me.username) + '">' +
+    '<input id="uGenre" placeholder="Жанр (необязательно)">' +
+    '<input id="uDur" type="number" min="1" placeholder="Длительность в секундах (необязательно)">' +
+    '<input id="uFile" type="file" accept=".mp3,.wav,.ogg,.m4a,audio/*">' +
+    '<button id="uBtn" class="btn" type="button">Загрузить</button>' +
+    '<p class="meta">Форматы: mp3, wav, ogg, m4a. Максимум 30 МБ.</p></div>';
+  $('uBtn').onclick = async () => {
+    const title = $('uTitle').value.trim(), artist = $('uArtist').value.trim(), file = $('uFile').files[0];
+    if(!title || !artist){ toast('Укажите название и исполнителя', true); return; }
+    if(!file){ toast('Выберите аудиофайл', true); return; }
+    try{
+      const body = {title, artist, genre: $('uGenre').value.trim() || null};
+      const d = parseInt($('uDur').value, 10); if(d > 0) body.durationSeconds = d;
+      const created = await api('/api/tracks', {method:'POST', json:body});
+      const fd = new FormData(); fd.append('file', file);
+      await api('/api/tracks/' + created.id + '/audio', {method:'POST', body:fd});
+      toast('Трек загружен!'); await loadCatalog(); show('catalog');
+    }catch(e){ toast(e.message, true); }
+  };
+}
+
+/* ---------- статистика исполнителя ---------- */
+async function renderStats(){
+  const s = await api('/api/artist/stats');
+  let html = '<div class="card"><h2>Статистика моих треков</h2>';
+  if(!s.tracks.length) html += '<div class="empty">Вы ещё не загрузили ни одного трека</div>';
+  else {
+    html += '<table><tr><th>Трек</th><th>Прослушиваний</th><th>В избранном</th></tr>';
+    s.tracks.forEach(t => html += '<tr><td>' + esc(t.title) + '</td><td>' + t.plays + '</td><td>' + t.inFavorites + '</td></tr>');
+    html += '</table>';
+  }
+  $('content').innerHTML = html + '</div>';
+}
+
+/* ---------- администрирование ---------- */
+async function renderAdmin(){
+  const [u, st] = await Promise.all([api('/api/admin/users'), api('/api/admin/stats')]);
+  let html = '<div class="card"><h2>Сводка</h2>' +
+    '<span class="stat"><b>' + st.users + '</b>пользователей</span>' +
+    '<span class="stat"><b>' + st.tracks + '</b>треков</span>' +
+    '<span class="stat"><b>' + st.listenings + '</b>прослушиваний</span>' +
+    '<span class="stat"><b>' + st.favorites + '</b>в избранном</span></div>' +
+    '<div class="card"><h2>Пользователи</h2><table><tr><th>ID</th><th>Имя</th><th>Email</th><th>Роль</th></tr>';
+  u.users.forEach(x => {
+    const self = x.id === me.id;
+    html += '<tr><td>' + x.id + '</td><td>' + esc(x.username) + '</td><td>' + esc(x.email) + '</td><td>' +
+      '<select data-uid="' + x.id + '"' + (self ? ' disabled' : '') + '>' +
+      ['USER','ARTIST','ADMIN'].map(r => '<option' + (r === x.role ? ' selected' : '') + '>' + r + '</option>').join('') +
+      '</select></td></tr>';
+  });
+  $('content').innerHTML = html + '</table></div>';
+  document.querySelectorAll('select[data-uid]').forEach(sel => sel.onchange = async () => {
+    try{ await api('/api/admin/users/' + sel.dataset.uid + '/role', {method:'PATCH', json:{role: sel.value}}); toast('Роль изменена'); }
+    catch(e){ toast(e.message, true); renderAdmin(); }
+  });
+}
+
+/* ---------- старт ---------- */
+(async () => {
+  const saved = sessionStorage.getItem('muzify_token');
+  if(saved){ token = saved; try{ await startApp(); }catch(e){ logout(); } }
+})();
+</script>
+</body>
+</html>
