@@ -55,7 +55,25 @@ mvn test
 | `artist` | `artist123` | ARTIST |
 | `user` | `user123` | USER |
 
-Также создаются 5 демо-треков.
+Также создаются 5 демо-треков с аудио.
+
+## 🎧 Слушать музыку в браузере
+После запуска откройте **http://localhost:8080** — это встроенный веб-плеер.
+Войдите кнопкой демо-входа (`user`, `artist` или `admin`) или зарегистрируйтесь сами.
+
+- **Каталог** — поиск по названию и исполнителю, кнопка ▶ запускает трек, ♡ добавляет в избранное.
+- **Избранное** и **История** — ваши сохранённые и прослушанные треки.
+- **Загрузить трек** (ARTIST, ADMIN) — загрузка собственных mp3/wav/ogg/m4a (до 30 МБ).
+- **Моя статистика** (ARTIST, ADMIN) и **Администрирование** (ADMIN) — по ролям.
+
+В проекте 5 демо-треков (короткие синтезированные композиции без авторских прав), они играют сразу.
+Каждое нажатие ▶ записывается в историю прослушиваний.
+
+**Свои песни без загрузки через сайт:** положите файлы в папку `music/` (имя в формате `Исполнитель - Название.mp3`)
+и перезапустите приложение — они появятся в каталоге. Папка `music/` не попадает в GitHub.
+
+Файлы хранятся в папке `uploads/` рядом с приложением (`app.storage.dir`).
+При работе с H2 (в памяти) данные в БД сбрасываются при перезапуске, с PostgreSQL — сохраняются.
 
 ## Аутентификация
 1. `POST /api/auth/login` → в ответе `token`
@@ -75,6 +93,8 @@ mvn test
 | POST | `/api/tracks` | ARTIST, ADMIN | добавить трек |
 | PUT | `/api/tracks/{id}` | автор, ADMIN | изменить трек |
 | DELETE | `/api/tracks/{id}` | автор, ADMIN | удалить трек |
+| POST | `/api/tracks/{id}/audio` | автор, ADMIN | загрузить аудиофайл (multipart, поле `file`) |
+| GET | `/api/tracks/{id}/stream` | авторизованные | воспроизведение аудио (поддерживает Range) |
 | GET | `/api/favorites` | авторизованные | избранное |
 | POST | `/api/favorites/{trackId}` | авторизованные | добавить в избранное (201 / 404 / 409) |
 | DELETE | `/api/favorites/{trackId}` | авторизованные | удалить из избранного (204 / 404) |
@@ -91,7 +111,7 @@ mvn test
 ## База данных
 ```
 users (id, username*, email*, password, role, created_at)
-tracks (id, title, artist, genre, duration_seconds, created_by -> users.id, created_at)
+tracks (id, title, artist, genre, duration_seconds, audio_file, created_by -> users.id, created_at)
 favorites (id, user_id -> users, track_id -> tracks, added_at)   UNIQUE(user_id, track_id)
 listening_history (id, user_id -> users, track_id -> tracks, started_at)
 ```
